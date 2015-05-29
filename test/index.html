@@ -12,7 +12,43 @@
 
     <script src="../bower_components/jquery/dist/jquery.js"></script>
     <script src="../src/odee.geoMap.js"></script>
-
+    <script>
+        $.geoMap({
+            canvas: '#map-canvas',
+            center: { lat: 35.88634, lng: 128.6284071 },
+            zoom: 18
+        }, {
+            ready: function(geomap) {
+                $.ajax({
+                    url: '../test/geodata.json',
+                    success: function(data) {
+                        $(data).each(function(i, data) {
+                            geomap.customOverlay({
+                                position: data.geodata,
+                                title: data.name,
+                                html: '<div id="' + data.id + '">' + data.name + '</div>'
+                            }).infoWindow(data.name);
+                        });
+                    }
+                })
+            },
+            idle: function(geomap) {
+                geomap.reset();
+                $.ajax({
+                    url: '../test/geodata.json',
+                    success: function(data) {
+                        $(data).each(function(i, data) {
+                            geomap.customOverlay({
+                                position: data.geodata,
+                                title: data.name,
+                                html: '<div id="' + data.id + '">' + data.name + '</div>'
+                            }).infoWindow(data.name);
+                        });
+                    }
+                })
+            }
+        });
+    </script>
 </head>
 <body>
 

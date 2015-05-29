@@ -4,8 +4,11 @@
 (function($) {
 
     var _callback = {
-        ready: function() {}
+        ready: function() {},
+        idle: function() {}
     }
+
+    var markers;
 
     var Geomap = function(element, mapOptions, callback) {
         this.element = $(element);
@@ -22,6 +25,16 @@
         init_: function() {
             this.map = new google.maps.Map(this.element[0], this.mapOptions);
             this.callback.ready(this, this.map);
+            this.load_ = true;
+
+            // Add the map event listener
+            var that = this;
+            google.maps.event.addListener(this.map, 'idle', function() {
+                that.callback.idle(that, that.map);
+            });
+
+            this.load_ = false;
+
         },
         marker: function(markerOptions) {
             markerOptions = $.extend({ map: this.map }, markerOptions);
@@ -38,12 +51,18 @@
             var marker = this.markers[this.markers.length - 1];
             var iw = this.infowindow;
             google.maps.event.addListener(marker, 'click', function() {
-                console.log(contents);
                 iw.setContent(contents);
                 iw.open(this.map, marker);
             });
 
             return this;
+        },
+        reset: function() {
+            console.log(this.markers.length);
+            for(var i = 0; i < this.markers.length; i++) {
+                this.markers[i].setMap(null);
+            }
+            this.markers = [];
         }
     }
 
@@ -122,27 +141,3 @@
 
 
 })(jQuery);
-
-
-
-$.geoMap({
-    canvas: '#map-canvas',
-    center: { lat: 35.88634, lng: 128.6284071 },
-    zoom: 18
-}, {
-    ready: function(geomap) {
-        $.ajax({
-            url: '../test/geodata.json',
-            success: function(data) {
-                $(data).each(function(i, data) {
-                     geomap.customOverlay({
-                        position: data.geodata,
-                        title: data.name,
-                        html: '<div id="' + data.id + '">' + data.name + '</div>'
-                    }).infoWindow(data.name);
-                });
-            }
-        })
-    }
-});
-
