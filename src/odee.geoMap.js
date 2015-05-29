@@ -29,13 +29,16 @@
             this.markers.push(marker);
             return this;
         },
-        customOverlay: function() {
+        customOverlay: function(customOptions) {
+            var marker = new CustomMarker(customOptions, this.map);
+            this.markers.push(marker);
             return this;
         },
         infoWindow: function(contents) {
             var marker = this.markers[this.markers.length - 1];
             var iw = this.infowindow;
             google.maps.event.addListener(marker, 'click', function() {
+                console.log(contents);
                 iw.setContent(contents);
                 iw.open(this.map, marker);
             });
@@ -43,6 +46,58 @@
             return this;
         }
     }
+
+    var CustomMarker = function(customOptions, map) {
+        this.latlng = new google.maps.LatLng(customOptions.position.lat, customOptions.position.lng);
+        this.customOptions = customOptions;
+        this.setMap(map);
+        this.div = null;
+    };
+
+    CustomMarker.prototype = $.extend(new google.maps.OverlayView(), {
+        draw: function() {
+            var me = this;
+            var div = this.div;
+            var html = this.customOptions.html;
+
+            if(!div) {
+                div = this.div = $(html).css({ // setting custom markup
+                    position: 'absolute',
+                    cursor: 'pointer',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '20px',
+                    backgroundColor: '#f60',
+                    color: '#fff',
+                    fontWeight: 800,
+                    marginLeft: '-20px',
+                    boxShadow: '2px 2px 2px 2px rgba(0, 0, 0, 0.6)'
+                })[0];
+
+                google.maps.event.addDomListener(div, 'click', function(e) {
+                    google.maps.event.trigger(me, 'click', e);
+                });
+
+                var panes = this.getPanes();
+                panes.overlayImage.appendChild(div);
+            }
+
+            var point = this.getProjection().fromLatLngToDivPixel(this.latlng);
+            if(point) {
+                div.style.left = point.x + 'px';
+                div.style.top = point.y + 'px';
+            }
+        },
+        remove: function() {
+            if(this.div) {
+                this.div.parentNode.removeChild(this.div);
+                this.div = null;
+            }
+        },
+        getPosition: function() {
+            return this.latlng;
+        }
+    });
 
 
     $.geoMap = function(element, mapOptions, callback) {
@@ -83,7 +138,7 @@ $.geoMap({
                      geomap.customOverlay({
                         position: data.geodata,
                         title: data.name,
-                        animation: google.maps.Animation.DROP
+                        html: '<div id="' + data.id + '">' + data.name + '</div>'
                     }).infoWindow(data.name);
                 });
             }
